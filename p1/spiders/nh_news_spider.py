@@ -25,7 +25,8 @@ class MsxwSpider(scrapy.Spider):
     start_urls = [
         "http://nh.cnnb.com.cn/news/nhnews",
         "http://nh.cnnb.com.cn/news/msxw",
-        "http://nh.cnnb.com.cn/news/waimei"
+        "http://nh.cnnb.com.cn/news/waimei",
+        "http://nh.cnnb.com.cn/news/chengqunews"
     ]
 
     def get_content(self,url):
@@ -48,7 +49,7 @@ class MsxwSpider(scrapy.Spider):
 
         for p in soup.select(".topic")[0].select('p'):
 
-            content.append(p.text)
+            content.append({'value':p.text})
 
         return content
 
@@ -56,7 +57,9 @@ class MsxwSpider(scrapy.Spider):
     def parse(self, response):
 
         soup = BeautifulSoup(response.body,'lxml',from_encoding="utf-8");
-        soup.encoding = 'utf-8'
+        soup.encoding = 'utf-8';
+
+        db_value = []
 
         for list in soup.select("#Columns")[0].select('li'):
 
@@ -68,18 +71,16 @@ class MsxwSpider(scrapy.Spider):
 
             content = self.get_content(self.domain+link);
 
-            content_str = "";
-
-            for str in content:
-                content_str+=str
-
-
             jason = {
 
                  'title':title,
-                 'content':content_str,
+                 'content':content,
                  'new_time':new_time,
-                  'orign':response.url
-             }
+                 'orign':response.url
+            }
 
-            collection.insert(jason)
+            db_value.append(jason)
+
+
+        collection.insert_many(db_value)
+
